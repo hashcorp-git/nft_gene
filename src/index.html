@@ -5,165 +5,106 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
     <title>GENE NFT 마켓</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css" />
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <link href="//fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,300,0,0" rel="stylesheet" />
     <link href="style.css" rel="stylesheet" />
   </head>
 
   <body>
-    <!-- Fixed navbar -->
-    <nav class="navbar navbar-default navbar-fixed-top">
-      <div class="container">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="#">Project name</a>
+    <header class="top-header">
+      <div class="inner">
+        <div class="top-header__left">
+          <h1 class="logo">LOGO</h1>
         </div>
-        <div id="navbar" class="navbar-collapse collapse">
-          <ul class="nav navbar-nav">
-            <li class="active"><a href="#">Home</a></li>
-            <li><a href="#about">About</a></li>
-            <li><a href="#contact">Contact</a></li>
-            <li class="dropdown">
-              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Dropdown <span class="caret"></span></a>
-              <ul class="dropdown-menu" role="menu">
-                <li><a href="#">Action</a></li>
-                <li><a href="#">Another action</a></li>
-                <li><a href="#">Something else here</a></li>
-                <li class="divider"></li>
-                <li class="dropdown-header">Nav header</li>
-                <li><a href="#">Separated link</a></li>
-                <li><a href="#">One more separated link</a></li>
-              </ul>
-            </li>
-          </ul>
-          <ul class="nav navbar-nav navbar-right">
-            <li><a href="../navbar/">Default</a></li>
-            <li><a href="../navbar-static-top/">Static top</a></li>
-            <li class="active">
-              <a href="./">Fixed top <span class="sr-only">(current)</span></a>
-            </li>
-          </ul>
-        </div>
-        <!--/.nav-collapse -->
-      </div>
-    </nav>
-
-    <div class="container">
-      <!-- Main component for a primary marketing message or call to action -->
-      <div class="jumbotron">
-        <h1>Navbar example</h1>
-        <p>
-          This example is a quick exercise to illustrate how the default, static and fixed to top navbar work. It includes the responsive CSS and HTML, so it also adapts to your viewport and device.
-        </p>
-        <p>To see the difference between static and fixed top navbars, just scroll.</p>
-        <p>
-          <a class="btn btn-lg btn-primary" href="../../components/#navbar" role="button">View navbar docs &raquo;</a>
-        </p>
-      </div>
-    </div>
-    <!-- /container -->
-
-    <!--
-  <div class="container">
-    <div class="row">
-      <div class="col-md-8 col-md-offset-2">    
-        <h3 class="text-center">크립토 <span style="color: red;">유튜브</span> 썸네일</h1>
-        <h3 class="text-center">
-          <code>Collect, Buy and Sell YouTube Thumbnails!</code>           
-          <button type="button" 
-                  class="btn btn-info pull-right" 
-                  id="login" 
-                  data-toggle="modal"
-                  data-target="#loginModal">
-                  로그인
-          </button>
-          <button type="button" 
-                  class="btn btn-info pull-right" 
-                  id="logout" 
-                  style="display: none;"
-                  onclick="App.handleLogout()">
-                  로그아웃
-          </button>
-        </h3>         
-        <div class="text-center" id="address"></div>         
-      </div>
-    </div>  
-
-    <div class="row">
-      <div class="afterLogin" style="display: none">
-        <button type="button"
-          class="btn btn-warning pull-left"
-          id="createToken"
-          data-toggle="modal"
-          data-target="#createTokenModal">
-          YTT 토큰 발행
-        </button>
-        <button type="button"
-          class="btn btn-success pull-right"
-          id="approve"
-          onclick="App.approve()">
-          토큰 판매 승인
-        </button>
-        <button type="button"
-          class="btn btn-danger pull-right"
-          id="cancelApproval"
-          onclick="App.cancelApproval()">
-          토큰 판매 승인 취소
-        </button>
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="afterLogin" style="display: none;">
-        <div id="tabs">
-          <ul>
-            <li><a href="#myTokens">내 보유 토큰</a></li>
-            <li><a href="#myTokensSale">내 판매 중 토큰</a></li>                        
-            <li><a href="#allTokens">모든 토큰</a></li>
-          </ul>
-          <div id="myTokens"></div>
-          <div id="allTokens"></div>
-          <div id="myTokensSale"></div>
+        <div class="top-header__right">
+          <button class="btn btn--primary radius" onclick="App.modalShow('#loginModal', 530)" id="login">로그인</button>
+          <button class="btn btn--default radius" onclick="App.handleLogout()" id="logout" style="display: none">로그아웃</button>
         </div>
       </div>
-    </div>
+    </header>
+    <!-- //.top-header -->
 
-    <div id="spin"></div>   
-  </div>  
--->
+    <section class="visually-banner">
+      <div class="inner">
+        <div class="visually-banner__content">
+          <h2 class="content__title">나만의 NFT를 발행해보세요.</h2>
+          <p class="content__description">누구나 쉽고 간편하게<br />NFT를 발행하고 관리할 수 있어요.</p>
+          <div class="content__buttons">
+            <button class="btn btn--primary radius big" onclick="App.modalShow('#createTokenModal', 680)">NFT 발행하기</button>
+          </div>
+        </div>
+        <div class="visually-banner__image">
+          <img src="https://krafter.space/images/explore_banner.svg" alt="" />
+        </div>
+      </div>
+    </section>
+    <!-- //.visually-banner -->
+
+    <main>
+      <section class="nft-section" id="nft-section">
+        <div class="inner">
+          <h3 class="nft-section__header">전체 NFT 리스트 (총 <span id="nft-total-count"></span>개 발행됨)</h3>
+          <div class="nft-section__list flex grid grid-4" id="allTokens"></div>
+        </div>
+      </section>
+    </main>
 
     <!-- Modals -->
+    <div class="modal" role="dialog" id="loginModal">
+      <div class="modal--inner">
+        <div class="modal__header">
+          <h3 class="header__title">로그인</h3>
+          <button id="modal-btn-close" class="modal-btn-close" onclick="App.modalClose()"><span class="material-symbols-outlined">close </span></button>
+        </div>
 
-    <div class="modal fade" tabindex="-1" role="dialog" id="loginModal">
-      <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-          <div class="modal-body">
-            <div class="form-group">
-              <label for="keystore">Keystore</label>
-              <input type="file" id="keystore" onchange="App.handleImport()" />
-            </div>
-            <div class="form-group">
-              <label for="input-password">비밀번호</label>
-              <input type="password" class="form-control" id="input-password" onchange="App.handlePassword()" />
-              <p class="help-block" id="message"></p>
-            </div>
+        <div class="modal__content">
+          <div class="form-group">
+            <label for="keystore">Keystore</label>
+            <input type="file" id="keystore" onchange="App.handleImport()" />
+            <div id="login-message" class="message"></div>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">닫기</button>
-            <button type="button" class="btn btn-primary" onclick="App.handleLogin()">제출</button>
+
+          <div class="form-group">
+            <label for="input-password">비밀번호</label>
+            <input type="password" class="form-control" id="input-password" onchange="App.handlePassword()" disabled="true" />
+            <p class="help-block" id="message"></p>
+          </div>
+
+          <div class="modal__footer">
+            <button type="button" class="btn btn--primary fill big radius" id="submit-login" onclick="App.handleLogin()" disabled="true">로그인</button>
           </div>
         </div>
-        <!-- /.modal-content -->
       </div>
-      <!-- /.modal-dialog -->
     </div>
-    <!-- /.modal -->
 
+    <div class="modal" role="dialog" id="createTokenModal">
+      <div class="modal--inner">
+        <div class="modal__header">
+          <h3 class="header__title">새로운 NFT 발행하기</h3>
+          <button id="modal-btn-close" class="modal-btn-close" onclick="App.modalClose()"><span class="material-symbols-outlined">close </span></button>
+        </div>
+
+        <div class="modal__content">
+          <div class="form-group">
+            <label for="nft-image">Image File</label>
+            <input type="file" id="nft-image" onchange="App.handleImportImage()" />
+          </div>
+          <div class="form-group">
+            <label for="nft-author">이름</label>
+            <input type="text" class="form-control" id="nft-author" />
+          </div>
+          <div class="form-group">
+            <label for="nft-description">설명</label>
+            <textarea class="form-control" id="nft-description"></textarea>
+          </div>
+          <div class="modal__footer">
+            <button type="button" class="btn btn--primary fill big radius" id="submit-nft" onclick="App.createToken()">제출</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!--
     <div class="modal fade" tabindex="-1" role="dialog" id="createTokenModal">
       <div class="modal-dialog modal-sm">
         <div class="modal-content">
@@ -191,86 +132,31 @@
             <button type="button" class="btn btn-primary btn-create" onclick="App.createToken()" disabled>제출</button>
           </div>
         </div>
-        <!-- /.modal-content -->
+
       </div>
-      <!-- /.modal-dialog -->
+
     </div>
-    <!-- /.modal -->
-  </body>
+  --></body>
 
   <!-- Templates -->
-
-  <div id="MyTokensTemplate" style="display: none">
-    <div class="col-sm-6 col-md-4 col-lg-3">
-      <div class="panel panel-primary">
-        <div class="panel-heading"></div>
-        <div class="panel-body">
-          <img style="width: 100%" src="" title="" />
-          <br /><br />
-          <strong>영상 ID</strong>: <span class="video-id"></span><br />
-          <strong>유튜버</strong>: <span class="author"></span><br />
-          <strong>게시일</strong>: <span class="date-created"></span><br />
-        </div>
-        <div class="panel-footer clearfix">
-          <div class="sell-token" style="display: none">
-            <div class="col-sm-6 col-md-8">
-              <input type="number" class="form-control amount" step="0.01" min="0" placeholder="KLAY" />
-            </div>
-            <div class="col-sm-6 col-md-4">
-              <button type="button" class="btn btn-default btn-sell" onclick="App.sellToken(this)">판매</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div id="AllTokensTemplate" style="display: none">
-    <div class="col-sm-6 col-md-4 col-lg-3">
-      <div class="panel panel-primary">
-        <div class="panel-heading"></div>
-        <div class="panel-body">
-          <img style="width: 100%" src="" title="" />
-          <br /><br />
-          <strong>영상 ID</strong>: <span class="video-id"></span><br />
-          <strong>유튜버</strong>: <span class="author"></span><br />
-          <strong>게시일</strong>: <span class="date-created"></span><br />
-        </div>
-        <div class="panel-footer clearfix">
-          <div class="buy-token" style="display: none">
-            <div class="col-sm-6 col-md-8">
-              <h5 class="token-price" style="color: green"></h5>
-            </div>
-            <div class="col-sm-6 col-md-4">
-              <button type="button" class="btn btn-default btn-buy" onclick="App.buyToken(this)">구매</button>
-            </div>
+    <div class="list__item grid-item">
+      <div class="item__box">
+        <a href="javascript:;">
+          <div class="box__thumbnail">
+            <img src="" alt="" />
           </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="MyTokensSaleTemplate" style="display: none">
-    <div class="col-sm-6 col-md-4 col-lg-3">
-      <div class="panel panel-primary">
-        <div class="panel-heading"></div>
-        <div class="panel-body">
-          <img style="width: 100%" src="" title="" />
-          <br /><br />
-          <strong>영상 ID</strong>: <span class="video-id"></span><br />
-          <strong>유튜버</strong>: <span class="author"></span><br />
-          <strong>게시일</strong>: <span class="date-created"></span><br />
-        </div>
-        <div class="panel-footer clearfix">
-          <h5 class="on-sale" style="color: red"></h5>
-        </div>
+          <div class="box__info">
+            <p class="info__block-number"></p>
+            <p class="info__subject"></p>
+            <p class="info__name">Created By <span class="created-name"></span></p>
+          </div>
+        </a>
       </div>
     </div>
   </div>
 
   <!-- S : JavaScript -->
-  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-  <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
   <script src="index.js"></script>
   <!-- E : JavaScript -->
 </html>

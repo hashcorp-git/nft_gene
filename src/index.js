@@ -1,4 +1,8 @@
 import caver from "./klaytn/caver";
+import GeneContract from "./klaytn/GeneContract";
+import { getWallet } from "./utils/crypto";
+import imageCompression from "./utils/imageCompression";
+import { drawImageFromBytes } from "./utils/imageUtils";
 import { Spinner } from "spin.js";
 
 // 상수 설정
@@ -6,9 +10,16 @@ const LOGIN = "LOGIN";
 const LOGOUT = "LOGOUT";
 const INTEGRATE_WALLET = "INTEGRATE_WALLET";
 const REMOVE_WALLET = "REMOVE_WALLET";
+const MAX_IMAGE_SIZE = 30000; // 30KB
+const MAX_IMAGE_SIZE_MB = 0.03; // 30KB
 
-// 컨트랙트 인스턴스 생성
-const geneContract = new caver.klay.Contract(DEPLOYED_ABI, DEPLOYED_ADDRESS);
+// jQuery DOM
+const $login = $("#login");
+const $logout = $("#logout");
+const $loginMessage = $("#login-message");
+const $inputPassword = $("#input-password");
+const $submitLogin = $("#submit-login");
+const $submitNft = $("#submit-nft");
 
 // IPFS 설정
 var ipfsClient = require("ipfs-http-client");
@@ -46,14 +57,18 @@ const App = {
     fileReader.onload = (event) => {
       try {
         if (!this.checkValidKeystore(event.target.result)) {
-          $("#message").text("유효하지 않은 keystore 파일입니다.");
+          $loginMessage.addClass("error");
+          $loginMessage.text("유효하지 않은 keystore 파일입니다.");
           return;
         }
         this.auth.keystore = event.target.result;
-        $("#message").text("keystore 통과. 비밀번호를 입력하세요.");
-        document.querySelector("#input-password").focus();
+        $loginMessage.removeClass("error");
+        $loginMessage.text("keystore 통과. 비밀번호를 입력하세요.");
+        $inputPassword.prop("disabled", false);
+        $inputPassword.focus();
       } catch (event) {
-        $("#message").text("유효하지 않은 keystore 파일입니다.");
+        $loginMessage.addClass("error");
+        $loginMessage.text("유효하지 않은 keystore 파일입니다.");
         return;
       }
     };
@@ -61,6 +76,11 @@ const App = {
 
   handlePassword: async function () {
     this.auth.password = event.target.value;
+    if (this.auth.password) {
+      $submitLogin.prop("disabled", false);
+    } else {
+      $submitLogin.prop("disabled", true);
+    }
   },
 
   handleLogin: async function () {
@@ -69,7 +89,8 @@ const App = {
         const privateKey = caver.klay.accounts.decrypt(this.auth.keystore, this.auth.password).privateKey;
         this.integrateWallet(privateKey);
       } catch (e) {
-        $("#message").text("비밀번호가 일치하지 않습니다.");
+        $loginMessage.addClass("error");
+        $loginMessage.text("비밀번호가 일치하지 않습니다.");
       }
     }
   },
@@ -79,9 +100,13 @@ const App = {
     location.reload();
   },
 
-  getWallet: function () {
-    if (caver.klay.accounts.wallet.length) {
-      return caver.klay.accounts.wallet[0];
+  handleImportImage: async function () {
+    const file = event.target.files[0];
+
+    // 이미지의 크기ㅏ MAX_IMAGE_SIZE(28KB)보다 큰 경우
+    // 트랜잭션에 올릴 수 있도록 이미지를 압축한다.
+    if (file.size > MAX_IMAGE_SIZE) {
+      return this.compressImage(file);
     }
   },
 
@@ -107,12 +132,21 @@ const App = {
     };
   },
 
+  modalShow: function (element, height) {
+    $(element).find(".modal--inner").height(height);
+    $(element).show();
+  },
+
+  modalClose: function () {
+    $(".modal").hide();
+  },
+
   changeUI: async function (walletInstance) {
-    $("#loginModal").modal("hide");
-    $("#login").hide();
-    $("#logout").show();
-    $(".afterLogin").show();
-    $("#address").append("<br>" + "<p>" + "내 계정 주소: " + walletInstance.address + "</p>");
+    this.modalClose();
+    $login.hide();
+    $logout.show();
+    //$(".afterLogin").show();
+    //$("#address").append("<br>" + "<p>" + "내 계정 주소: " + walletInstance.address + "</p>");
     //await this.displayMyTokensAndSale(walletInstance);
     await this.displayAllTokens(walletInstance);
     //await this.checkApproval(walletInstance);
@@ -130,80 +164,62 @@ const App = {
   },
   //#endregion
 
-  checkTokenExists: async function () {
-    var videoId = $("#video-id").val();
-    var result = await this.isTokenAlreadyCreated(videoId);
-
-    if (result) {
-      $("#t-message").text("이미 토큰화된 썸네일 입니다");
-    } else {
-      $("#t-message").text("토큰화가 가능한 썸네일 입니다.");
-      $(".btn-create").prop("disabled", false);
-    }
-  },
-
   createToken: async function () {
     var spinner = this.showSpinner();
-    var videoId = $("#video-id").val();
-    var title = $("#title").val();
-    var author = $("#author").val();
-    var dateCreated = $("#date-created").val();
+    var nftImage = $("#nft-image").prop("files");
+    var author = $("#nft-author").val();
+    var description = $("#nft-description").val();
 
-    if (!videoId || !title || !author || !dateCreated) {
+    if (!nftImage || !author || !description) {
       spinner.stop();
       return;
     }
 
-    try {
-      const metaData = this.getERC721MetadataSchema(videoId, title, `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`);
-      /**
-       * 메타데이터 JSON문자열을 바이너리로 변환 (ipfs에 업로드하기위해)
-       * 성공적으로 업로드되면 해쉬값을 리턴
-       */
-      var res = await ipfs.add(Buffer.from(JSON.stringify(metaData)));
-      await this.mintYTT(videoId, author, dateCreated, res[0].hash);
-    } catch (error) {
-      console.error(error);
-      spinner.stop();
-    }
+    const reader = new window.FileReader();
+
+    // 트랜잭션에 올릴 수 있도록 사진 파일을 16진수 문자열로 변환한다.
+    reader.readAsArrayBuffer(nftImage[0]);
+    reader.onloadend = async () => {
+      const buffer = Buffer.from(reader.result);
+      const hexString = "0x" + buffer.toString("hex");
+
+      try {
+        const metaData = this.getERC721MetadataSchema(author, description, hexString);
+        /**
+         * 메타데이터 JSON문자열을 바이너리로 변환 (ipfs에 업로드하기위해)
+         * 성공적으로 업로드되면 해쉬값을 리턴
+         */
+        var res = await ipfs.add(Buffer.from(JSON.stringify(metaData)));
+        await this.mintGENE(author, res[0].hash);
+      } catch (error) {
+        console.error(error);
+        spinner.stop();
+      }
+    };
   },
 
-  mintGENE: async function (photo, title, description, hash) {
+  mintGENE: async function (name, hash) {
     /**
      * 컨트랙트를 배포하는 계정이 대납계정이 되어서
      * 사용자대신 가스비를 내줌으로써 사용자입장에서는 가스비를 절약한다.
      */
-    const sender = this.getWallet(); // 함수호출자
-    const feePayer = caver.klay.accounts.wallet.add("0x4d2b1e8478b299b90b592e85ecc7b289ebf33b9a5aef601b8891360e1082ec99"); // 수수료 대납 계정
+    const receipt = await GeneContract.methods.mintGENE(name, "https://ipfs.infura.io/ipfs/" + hash).send({
+      from: getWallet().address,
+      gas: "500000",
+    });
 
-    // 트랜잭션 서명하기
-    const { rawTransaction: senderRawTransaction } = await caver.klay.accounts.signTransaction(
-      {
-        type: "FEE_DELEGATED_SMART_CONTRACT_EXECUTION",
-        from: sender.address,
-        to: DEPLOYED_ADDRESS,
-        // 컨트랙트의 input 데이터
-        // 함수이름과 매개변수 값들은 ABI로 인코딩하여 넘긴다.
-        data: geneContract.methods.mintYTT(videoId, author, dateCreated, "https://ipfs.infura.io/ipfs/" + hash).encodeABI(),
-        gas: "500000",
-        value: caver.utils.toPeb("0", "KLAY"), // payable 타입일때는 1
-      },
-      sender.privateKey
-    );
-
-    //서명된 트랜잭션 전송
-    caver.klay
-      .sendTransaction({
-        senderRawTransaction: senderRawTransaction,
-        feePayer: feePayer.address,
-      })
-      .then(function (receipt) {
-        if (receipt.transactionHash) {
-          console.log("https://ipfs.infura.io/ipfs/" + hash);
-          alert(receipt.transactionHash);
-          location.reload();
-        }
-      });
+    if (receipt.transactionHash) {
+      try {
+        console.log(receipt);
+        console.log("https://ipfs.infura.io/ipfs/" + hash);
+        const tokenId = receipt.events.GeneUploaded.returnValues[0];
+        console.log("tokenId", tokenId);
+        alert(receipt.transactionHash);
+        this.changeUI(getWallet());
+      } catch (error) {
+        console.error(error.toString());
+      }
+    }
   },
 
   displayMyTokensAndSale: async function (walletInstance) {
@@ -233,75 +249,49 @@ const App = {
     if (totalSupply === 0) {
       $("#allTokens").text("현재 발행된 토큰이 없습니다.");
     } else {
+      console.log(totalSupply);
       for (var i = 0; i < totalSupply; i++) {
         (async () => {
           var tokenId = await this.getTokenByIndex(i);
           var tokenUri = await this.getTokenUri(tokenId);
-          var ytt = await this.getGENE(tokenId);
+          var gene = await this.getGENE(tokenId);
           var metaData = await this.getMetadata(tokenUri);
-          var price = await this.getTokenPrice(tokenId);
           var owner = await this.getOwnerOf(tokenId);
 
-          this.renderAllTokens(tokenId, ytt, metaData, price, owner, walletInstance);
+          this.renderAllTokens(tokenId, gene, metaData, owner, walletInstance);
         })();
       }
     }
   },
 
-  renderMyTokens: function (tokenId, ytt, metadata, isApproved, price) {
-    var tokens = $("#myTokens");
-    var template = $("#MyTokensTemplate");
-    this.getBasicTemplate(template, tokenId, ytt, metadata);
+  renderMyTokens: function (tokenId, ytt, metadata, isApproved, price) {},
 
-    if (isApproved) {
-      if (parseInt(price) > 0) {
-        template.find(".sell-token").hide();
-      } else {
-        template.find(".sell-token").show();
-      }
-    }
+  renderMyTokensSale: function (tokenId, ytt, metadata, price) {},
 
-    tokens.append(template.html());
-  },
-
-  renderMyTokensSale: function (tokenId, ytt, metadata, price) {
-    var tokens = $("#myTokensSale");
-    var template = $("#MyTokensSaleTemplate");
-    this.getBasicTemplate(template, tokenId, ytt, metadata);
-
-    template.find(".on-sale").text(caver.utils.fromPeb(price, "KLAY") + " KLAY에 판매중");
-
-    tokens.append(template.html());
-  },
-
-  renderAllTokens: function (tokenId, ytt, metadata, price, owner, walletInstance) {
+  renderAllTokens: function (tokenId, gene, metadata, owner, walletInstance) {
     var tokens = $("#allTokens");
     var template = $("#AllTokensTemplate");
-
-    this.getBasicTemplate(template, tokenId, ytt, metadata);
-
-    if (parseInt(price) > 0) {
-      template.find(".buy-token").show();
-      template.find(".token-price").text(caver.utils.fromPeb(price, "KLAY") + " KLAY");
-
-      // 주소값이 둘중에 간혹 소문자가 있는 경우가 있어서 대문자로 변환하여 비교한다
-      if (owner.toUpperCase() === walletInstance.address.toUpperCase()) {
-        template.find(".btn-buy").attr("disabled", true);
-      } else {
-        template.find(".btn-buy").attr("disabled", false);
-      }
-    } else {
-      template.find(".buy-token").hide();
-    }
-
+    this.getBasicTemplate(template, tokenId, gene, metadata);
     tokens.append(template.html());
+  },
+
+  // 첨부이미지 검사
+  compressImage: async function (imageFile) {
+    try {
+      const compressedFile = await imageCompression(imageFile, MAX_IMAGE_SIZE_MB);
+      //이미지 업로드 겁증 통과시
+      console.log("이미지 검증 완료");
+    } catch (error) {
+      // 이미지 업로드 실패시
+      console.error(error);
+    }
   },
 
   approve: async function () {
     this.showSpinner();
-    const walletInstance = this.getWallet();
+    const walletInstance = getWallet();
 
-    const receipt = await geneContract.methods.setApprovalForAll(DEPLOYED_ADDRESS_TOKENSALES, true).send({
+    const receipt = await GeneContract.methods.setApprovalForAll(DEPLOYED_ADDRESS_TOKENSALES, true).send({
       from: walletInstance.address,
       gas: "250000",
     });
@@ -313,9 +303,9 @@ const App = {
 
   cancelApproval: async function () {
     this.showSpinner();
-    const walletInstance = this.getWallet();
+    const walletInstance = getWallet();
 
-    const receipt = await geneContract.methods.setApprovalForAll(DEPLOYED_ADDRESS_TOKENSALES, false).send({
+    const receipt = await GeneContract.methods.setApprovalForAll(DEPLOYED_ADDRESS_TOKENSALES, false).send({
       from: walletInstance.address,
       gas: "250000",
     });
@@ -344,7 +334,7 @@ const App = {
 
     try {
       var spinner = this.showSpinner();
-      const sender = this.getWallet(); // 함수호출자
+      const sender = getWallet(); // 함수호출자
       const feePayer = caver.klay.accounts.wallet.add("0x4d2b1e8478b299b90b592e85ecc7b289ebf33b9a5aef601b8891360e1082ec99"); // 수수료 대납 계정
 
       // using the promise
@@ -386,7 +376,7 @@ const App = {
 
     try {
       var spinner = this.showSpinner();
-      const sender = this.getWallet(); // 함수호출자
+      const sender = getWallet(); // 함수호출자
       const feePayer = caver.klay.accounts.wallet.add("0x4d2b1e8478b299b90b592e85ecc7b289ebf33b9a5aef601b8891360e1082ec99"); // 수수료 대납 계정
 
       // using the promise
@@ -445,44 +435,44 @@ const App = {
   },
 
   isTokenAlreadyCreated: async function (videoId) {
-    return await geneContract.methods.isTokenAlreadyCreated(videoId).call();
+    return await GeneContract.methods.isTokenAlreadyCreated(videoId).call();
   },
 
-  getERC721MetadataSchema: function (videoId, title, imgUrl) {
+  getERC721MetadataSchema: function (author, description, imgBase64) {
     return {
       title: "Asset Metadata",
       type: "object",
       properties: {
         name: {
           type: "string",
-          description: videoId,
+          description: author,
         },
         description: {
           type: "string",
-          description: title,
+          description: description,
         },
         image: {
           type: "string",
-          description: imgUrl,
+          description: imgBase64,
         },
       },
     };
   },
 
   getBalanceOf: async function (address) {
-    return await geneContract.methods.balanceOf(address).call();
+    return await GeneContract.methods.balanceOf(address).call();
   },
 
   getTokenOfOwnerByIndex: async function (address, index) {
-    return await geneContract.methods.tokenOfOwnerByIndex(address, index).call();
+    return await GeneContract.methods.tokenOfOwnerByIndex(address, index).call();
   },
 
   getTokenUri: async function (tokenId) {
-    return await geneContract.methods.tokenURI(tokenId).call();
+    return await GeneContract.methods.tokenURI(tokenId).call();
   },
 
   getGENE: async function (tokenId) {
-    return await geneContract.methods.getGENE(tokenId).call();
+    return await GeneContract.methods.getGENE(tokenId).call();
   },
 
   getMetadata: function (tokenUri) {
@@ -494,15 +484,15 @@ const App = {
   },
 
   getTotalSupply: async function () {
-    return await geneContract.methods.totalSupply().call();
+    return await GeneContract.methods.totalSupply().call();
   },
 
   getTokenByIndex: async function (index) {
-    return await geneContract.methods.tokenByIndex(index).call();
+    return await GeneContract.methods.tokenByIndex(index).call();
   },
 
   isApprovedForAll: async function (owner, operator) {
-    return await geneContract.methods.isApprovedForAll(owner, operator).call();
+    return await GeneContract.methods.isApprovedForAll(owner, operator).call();
   },
 
   /*
@@ -512,16 +502,17 @@ const App = {
   */
 
   getOwnerOf: async function (tokenId) {
-    return await geneContract.methods.ownerOf(tokenId).call();
+    return await GeneContract.methods.ownerOf(tokenId).call();
   },
 
-  getBasicTemplate: function (template, tokenId, ytt, metadata) {
-    template.find(".panel-heading").text(tokenId);
-    template.find("img").attr("src", metadata.properties.image.description);
-    template.find("img").attr("title", metadata.properties.description.description);
-    template.find(".video-id").text(metadata.properties.name.description);
-    template.find(".author").text(ytt[0]);
-    template.find(".date-created").text(ytt[1]);
+  getBasicTemplate: function (template, tokenId, gene, metadata) {
+    console.log(gene);
+    const imageUrl = drawImageFromBytes(metadata.properties.image.description);
+    template.find(".info__block-number").text(tokenId);
+    template.find(".box__thumbnail img").attr("src", imageUrl);
+    template.find(".box__thumbnail img").attr("alt", metadata.properties.description.description);
+    template.find(".created-name").text(metadata.properties.name.description);
+    template.find(".info__subject").text(gene[0]);
   },
 };
 
@@ -529,7 +520,7 @@ window.App = App;
 
 window.addEventListener("load", function () {
   App.start();
-  $("#tabs").tabs().css({ overflow: "auto" });
+  //$("#tabs").tabs().css({ overflow: "auto" });
 });
 
 var opts = {

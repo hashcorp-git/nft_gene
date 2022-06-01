@@ -4,25 +4,21 @@ import "openzeppelin-solidity/contracts/token/ERC721/ERC721Full.sol";
 
 contract GeneToken is ERC721Full {
 
-    event GeneUploaded (uint256 indexed tokenId, bytes photo, string title, string description, uint256 timestamp);
+    event GeneUploaded (uint256 indexed tokenId, string title, uint256 timestamp);
 
     mapping (uint256 => GeneData) private _geneList;
 
     struct GeneData {
         uint256 tokenId;                       // Unique token id
         address[] ownerHistory;                // History of all previous owners
-        bytes photo;                           // Image source encoded in uint 8 array format
         string title;                          // Title of photo
-        string description;                    // Short description about the photo
         uint256 timestamp;                     // Uploaded time
     }
 
     constructor(string memory name, string memory symbol) ERC721Full(name, symbol) public {}
 
     function mintGENE(
-        bytes memory _photo, 
         string memory _title, 
-        string memory _description,
         string memory _tokenURI
     )
     public
@@ -36,9 +32,7 @@ contract GeneToken is ERC721Full {
         GeneData memory newGeneData = GeneData({
             tokenId : tokenId,
             ownerHistory : ownerHistory,
-            photo : _photo,
             title: _title,
-            description : _description,
             timestamp : now
         });
 
@@ -49,10 +43,10 @@ contract GeneToken is ERC721Full {
 
         // 토큰발행
         _mint(msg.sender, tokenId);
-        // 토큰URI 설정
-        _setTokenURI(tokenId, _tokenURI);
+        _setTokenURI(tokenId, _tokenURI); 
 
-        emit GeneUploaded(tokenId, _photo, _title, _description, now);
+
+        emit GeneUploaded(tokenId, _title, now);
     }
 
   /**
@@ -83,14 +77,12 @@ contract GeneToken is ERC721Full {
     }    
 
     function getGENE (uint256 _tokenId) public view
-    returns(uint256, address[] memory, bytes memory, string memory, string memory, uint256) {
+    returns(uint256, address[] memory, string memory, uint256) {
         require(_geneList[_tokenId].tokenId != 0, "Photo does not exist");
         return (
             _geneList[_tokenId].tokenId,
             _geneList[_tokenId].ownerHistory,
-            _geneList[_tokenId].photo,
             _geneList[_tokenId].title,
-            _geneList[_tokenId].description,
             _geneList[_tokenId].timestamp
         );
     }
