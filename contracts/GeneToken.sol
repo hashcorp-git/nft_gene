@@ -33,7 +33,7 @@ contract GeneToken is ERC721Full {
             tokenId : tokenId,
             ownerHistory : ownerHistory,
             title: _title,
-            timestamp : now
+            timestamp : block.timestamp
         });
 
         _geneList[tokenId] = newGeneData;
@@ -46,7 +46,7 @@ contract GeneToken is ERC721Full {
         _setTokenURI(tokenId, _tokenURI); 
 
 
-        emit GeneUploaded(tokenId, _title, now);
+        emit GeneUploaded(tokenId, _title, block.timestamp);
     }
 
   /**

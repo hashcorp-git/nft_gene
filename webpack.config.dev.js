@@ -36,6 +36,7 @@ module.exports = {
     hot: true,
     inline: true,
     open: true,
+    disableHostCheck: true,
   },
   node: {
     fs: "empty",

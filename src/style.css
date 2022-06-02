@@ -545,12 +545,14 @@ input[type="email"]:disabled {
 
 /* Layout
 -------------------------------------------------------- */
+html {
+  font-size: 100%;
+}
 body {
   margin: 0;
   padding: 0;
   color: #000;
   background: #fff;
-  font-size: 100%;
   line-height: 1.6;
 }
 .inner {
@@ -589,11 +591,15 @@ body {
 }
 .visually-banner .visually-banner__content .content__title {
   font-size: 3rem;
+  line-height: 1.4;
   margin: 0;
 }
 .visually-banner .visually-banner__content .content__description {
   font-size: 1rem;
   margin: 15px 0 45px;
+}
+.visually-banner .visually-banner__image img {
+  max-width: 100%;
 }
 
 /* NFT Section
@@ -631,9 +637,18 @@ body {
 .nft-section .nft-section__list .list__item .item__box .box__info .info__name {
   font-size: 0.75rem;
   color: #999;
+  display: flex;
 }
 .nft-section .nft-section__list .list__item .item__box .box__info .info__name .created-name {
-  color: rgb(120, 120, 120);
+  color: #000;
+  margin-left: 5px;
+}
+.nft-section .nft-section__list .list__item .item__box .box__info .info__name .created-date {
+  margin-left: auto;
+}
+.nft-section .nft-section__list .list__item .item__box .box__info .info__block-number {
+  margin-bottom: 5px;
+  font-size: 0.75rem;
 }
 
 /* Modal
@@ -729,4 +744,44 @@ body {
 }
 
 .modal .modal__content .form-group .nft-description {
+}
+
+@media screen and (max-width: 992px) {
+  html {
+    font-size: 80%;
+  }
+  .visually-banner .visually-banner__content .content__description {
+    font-size: 1.25rem;
+  }
+  .grid-4 .grid-item {
+    width: 33.3333334%;
+  }
+}
+
+@media screen and (max-width: 640px) {
+  .visually-banner > .inner {
+    flex-direction: column;
+  }
+  .visually-banner .visually-banner__image {
+    order: 0;
+  }
+  .visually-banner .visually-banner__content {
+    order: 1;
+    margin-top: 15px;
+  }
+  .visually-banner .visually-banner__content .content__title {
+    font-size: 2.25rem;
+  }
+  .grid-4 .grid-item {
+    width: 50%;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .nft-section__list.flex {
+    flex-wrap: wrap;
+  }
+  .grid-4 .grid-item {
+    width: 100%;
+  }
 }

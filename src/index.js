@@ -4,6 +4,7 @@ import { getWallet } from "./utils/crypto";
 import imageCompression from "./utils/imageCompression";
 import { drawImageFromBytes } from "./utils/imageUtils";
 import { Spinner } from "spin.js";
+import moment from "moment";
 
 // 상수 설정
 const LOGIN = "LOGIN";
@@ -20,6 +21,7 @@ const $loginMessage = $("#login-message");
 const $inputPassword = $("#input-password");
 const $submitLogin = $("#submit-login");
 const $submitNft = $("#submit-nft");
+const $nftTotalCount = $("#nft-total-count");
 
 // IPFS 설정
 var ipfsClient = require("ipfs-http-client");
@@ -40,6 +42,7 @@ const App = {
   //#region 계정 인증
 
   start: async function () {
+    await this.displayAllTokens();
     const walletFromSession = sessionStorage.getItem("walletInstance");
     if (walletFromSession) {
       try {
@@ -148,7 +151,6 @@ const App = {
     //$(".afterLogin").show();
     //$("#address").append("<br>" + "<p>" + "내 계정 주소: " + walletInstance.address + "</p>");
     //await this.displayMyTokensAndSale(walletInstance);
-    await this.displayAllTokens(walletInstance);
     //await this.checkApproval(walletInstance);
   },
 
@@ -215,7 +217,7 @@ const App = {
         const tokenId = receipt.events.GeneUploaded.returnValues[0];
         console.log("tokenId", tokenId);
         alert(receipt.transactionHash);
-        this.changeUI(getWallet());
+        location.reload();
       } catch (error) {
         console.error(error.toString());
       }
@@ -246,6 +248,7 @@ const App = {
 
   displayAllTokens: async function (walletInstance) {
     var totalSupply = parseInt(await this.getTotalSupply());
+    $nftTotalCount.text(totalSupply);
     if (totalSupply === 0) {
       $("#allTokens").text("현재 발행된 토큰이 없습니다.");
     } else {
@@ -258,7 +261,7 @@ const App = {
           var metaData = await this.getMetadata(tokenUri);
           var owner = await this.getOwnerOf(tokenId);
 
-          this.renderAllTokens(tokenId, gene, metaData, owner, walletInstance);
+          this.renderAllTokens(tokenId, gene, metaData, owner);
         })();
       }
     }
@@ -268,7 +271,7 @@ const App = {
 
   renderMyTokensSale: function (tokenId, ytt, metadata, price) {},
 
-  renderAllTokens: function (tokenId, gene, metadata, owner, walletInstance) {
+  renderAllTokens: function (tokenId, gene, metadata, owner) {
     var tokens = $("#allTokens");
     var template = $("#AllTokensTemplate");
     this.getBasicTemplate(template, tokenId, gene, metadata);
@@ -505,14 +508,16 @@ const App = {
     return await GeneContract.methods.ownerOf(tokenId).call();
   },
 
-  getBasicTemplate: function (template, tokenId, gene, metadata) {
-    console.log(gene);
+  getBasicTemplate: async function (template, tokenId, gene, metadata) {
+    const issueDate = moment(parseInt(gene[3]) * 1000).fromNow();
+
     const imageUrl = drawImageFromBytes(metadata.properties.image.description);
-    template.find(".info__block-number").text(tokenId);
     template.find(".box__thumbnail img").attr("src", imageUrl);
     template.find(".box__thumbnail img").attr("alt", metadata.properties.description.description);
     template.find(".created-name").text(metadata.properties.name.description);
-    template.find(".info__subject").text(gene[0]);
+    template.find(".created-date").text(issueDate);
+    template.find(".info__subject").text(gene[1]);
+    template.find(".info__block-number").text("Block : #" + tokenId);
   },
 };
 
